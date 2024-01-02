@@ -1,0 +1,238 @@
+Cree un super usuarios
+user: tarea
+password: 1234
+
+--Creacion de bata bases-------tarea
+CREATE DATABASE '+NOMBRE DE LA BASE DE DATOS+'
+
+
+--crear tabla (EJEMPLO PARA CREAR USUARIOS)
+CREATE TABLE '+NOMBRE DE LA TABLA+'(
+	id INT AUTO_INCREMENT PRIMARY KEY,
+	usename VARCHAR(50) UNIQUE NOT NULL,
+	email VARCAR(100) UNIQUE NOT NULL,
+	age INT UNSIGNED NOT NULL,
+	status UNEM('active', 'inactive') DEFAULT 'inactive',
+	bio TEXT,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+--insertar registros--ejemplo
+INSERT INTO '+tabla del ejemplo+' (username, email, age) VALUES
+('user1', 'user1@gmail.com', '34');
+
+--consulta de los registros de la tabla
+--obtiene todas las columnas de todos los usuarios
+
+SELECT * FROM /'nombre de la tabla'/;
+
+-- con este comando veremos los datos de forma mas detallada en formato "carta"
+	SELECT * FROM usuarios\G;
+
+
+-----ejercicios--------------
+
+-- te muestra los datos del usario mencionado.
+SELECT * FROM usuarios WHERE id = 2;--el numero final puede varias segun se requiera.
+
+-- si solo deseas ver ciertos datos de tu tabla en ves del * puedes mencionar lo que quieres ver
+	ejemplo:
+		SELECT username, email, age, status, bio FROM usuarios;
+	esto mostrara los datos del usuario su correo, edad, estatus y su biografia o breve descripcion.
+	pero en la parte de FROM seleccionamos la tabla en la que se buscaran esos valores.
+
+--obtener el usuario con el email del carmen_34@example.com
+	SELECT * FROM usuarios WHERE email = 'carmen_34@example.com';
+
+--obtener usuarios de una edad mayor a 25
+	SELECT * FROM usuarios WHERE age > 25;
+-- de igual maenera se pude usar de maera inversa. solo deves cambiar el valor a evaluar o las condiciones.
+
+
+-- buscar registro de usuarios que no poseen una biografia.
+	SELECT * FROM usuarios WHERE bio IS NULL;
+-- para visualizar a usario que si tenga biografia usamos el operador logico NOT
+	ejemplo:
+		 SELECT * FROM usuarios WHERE bio IS NOT NULL;
+
+--obtener todos los datos que se crearion el dia de hoy
+	SELECT * FROM usuarios WHERE created_at > '2024-01-01 00:00:01';
+	SELECT * FROM usuarios WHERE DATE(created_at) = '2024-01-01';
+
+--obtener l usaername de los usuario de los siguientes datos 1, 3, 5 y 6
+	SELECT usuarios * FROM usuarios WHERE id = 1 or id =3 or id = 5 or id = 6;
+	 SELECT * FROM usuarios WHERE id IN(1, 3, 5, 6);
+	SELECT username, id FROM usuarios WHERE id = 1 or id =3 or id = 5 or id = 6;
+
+--obtener las edades de todos los usuarios mayores de edad
+	SELECT  age FROM usuarios WHERE age >= 18;
+
+-- obtener el username y corre del usario con mayor de edad
+--obtener el username y correo electronico del usarios con menor edad
+	SELECT * FROM usuarios ORDER BY age DESC;
+	SELECT * FROM usuarios ORDER BY age asc;
+-- tambien se su puede limitar la muestra del resultado
+	SELECT * FROM usuarios ORDER BY age DESC LIMIT !;
+
+--------------pero solo con el username y correo
+	SELECT username, age FROM usuarios ORDER BY age asc;
+
+--obtener el username, correo electronico y edad de todos los usuarios con rangos de edad entre 27 y 31
+	SELECT username, email, age FROM usuarios WHERE age >27 AND age < 31;
+
+--y si queremos hacer la busqueda con un solo caracter podemos usar el caracter 'LIKE'
+y dependiendo del comodin que usen se hara la busqueda:
+	'%': Representa cero, uno o múltiples caracteres.
+	'_': Representa un solo carácter.
+
+
+	 SELECT * FROM usuarios WHERE email LIKE '%.com';
+	SELECT * FROM usuarios WHERE username LIKE 'A%';
+------------------------------------------------------------------------------------------------------
+
+--haremos modificaciones a los registros de las tablas bajo en comando UPDATE.
+	UPDATE usuarios SET bio = 'Desarrollador de sistemas' WHERE id = 5;
+--no solo podemos actualizar un campo de nuesta tabla o de un usuario en especifico sino puede ser N veces 
+  lo modificable, pero recordar siempre fijar bien la condicional para la fila a cambiar el valor.
+	
+	UPDATE usuarios SET bio = 'Le gustan las peliculas de terror', username = 'Mario54'  WHERE id = 23;
+
+--Para eliminar un registro usaremos el siguiente comando(recorda siempre de poner la condicion para el eliminado)
+--el DELETE esta diseñado para eliminar registros y te permite hacer trigger.
+	DELETE FROM usuarios WHERE  id = 22;
+
+--y para elimar la tabla completamente usamos el siguiente comando
+Esta diseñado para elimanr registros y re establcer meta informacion de la tabla
+	TRUNCATE usuarios;
+
+
+--------------------------------------------------------------------------------------------------------
+haremos pruebas de muchos a muchos en la base de datos----ejemplo 2
+ 	CREATE TABLE comentarios(
+    	id INT AUTO_INCREMENT PRIMARY KEY,
+    	title VARCHAR(50),
+    	user_id INT, --llaves foraneas
+    	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    	FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+	);
+
+ON DELETE CASCADE ES UNA RESTRICCION DELA LLAVES FORANEAS QUE ELIMINA UN REGISTRO PRINCIPAL 
+BORRANDO DE MANERA AUTOMATICALOS DATOS REALICIONADOS EN LA TABLA SECUNDARIA. MANTENIENDO 
+LA INTEGRIDAD REFERENCIAL DE LOS DATOS.
+
+--obtener todos los usuarios con por lo menos un comentario comentarios
+	SELECT *
+	FROM usuarios
+	INNER JOIN comentarios ON usuarios.id = comentarios.user_id;
+
+-- CON ESTE COMANDO SELECCIONAMOS EN LA TABLA LOS CAMPOS QUE DESEAMOS VISUALIZAR
+	SELECT usuarios.username, usuarios.commets
+	FROM usuarios
+	INNER JOIN comentarios ON usuarios.id = comentarios.user_id;
+
+-- CON ESTE COMANDO DISTINCT, QUEREMOS VISUALIZAR REGISTRO UNICOS NO REPETITIVOS
+	SELECT DISTINCT usuarios.username, usuarios.email FROM usuarios INNER JOIN comentarios ON usuarios.id = comentarios.user_id;
+
+VISUALIZAREMOS TODOSLO LOS COMENTARIOS DE LOS USUARIOS ACTIVOS
+	SELECT usuarios.username, usuarios.email FROM usuarios INNER JOIN comentarios ON usuarios.id = comentarios.user_id WHERE usuarios.status ='active';
+
+VISUALIZAREMOS TODOSLO LOS  USUARIOS QUE NO TENGAN COMENTARIOS	(lo sacamos con teoria de conjuntos)
+	SELECT usuarios.*
+	FROM usuarios
+	LEFT JOIN comentarios ON usuarios.id = comentarios.user_id
+	WHERE comentarios.id IS NULL;
+
+visualizar el username y correo electronico del usuario con mas comentarios el dia de hoy
+(se agrupa, luego se ceunta y se ordena)
+	SELECT usuarios.username, usuarios.email, max_comentarios.num_comentarios AS cantidad_comentarios
+    	-> FROM usuarios
+    	-> INNER JOIN (
+    	->     SELECT user_id, COUNT(*) AS num_comentarios
+    	->     FROM comentarios
+    	->     WHERE DATE(created_at) = CURDATE()--es una función de MariaDB que devuelve la fecha actual en formato de fecha
+    	->     GROUP BY user_id
+    	->     ORDER BY num_comentarios DESC
+    	-> ) AS max_comentarios ON usuarios.id = max_comentarios.user_id;
+
+En esta consulta corregida, se ha añadido max_comentarios.num_comentarios AS cantidad_comentarios para mostrar la cantidad total de comentarios realizados por el usuario
+
+	SELECT usuarios.username, usuarios.email, max_comentarios.num_comentarios AS cantidad_comentarios
+	FROM usuarios
+	INNER JOIN (
+    		SELECT user_id, COUNT(*) AS num_comentarios
+    		FROM comentarios
+    		WHERE DATE(created_at) = CURDATE()
+   		GROUP BY user_id
+    		ORDER BY num_comentarios DESC
+    		LIMIT 1
+	) AS max_comentarios ON usuarios.id = max_comentarios.user_id;
+
+
+------PARA TENER LO DESEADO HARE UNA SUB CONSULTA A LA TABLA QUUE ME ARROJA ESTE COMANDO
+SELECT username, email
+FROM (
+    SELECT usuarios.username, usuarios.email, max_comentarios.num_comentarios AS cantidad_comentarios
+    FROM usuarios
+    INNER JOIN (
+        SELECT user_id, COUNT(*) AS num_comentarios
+        FROM comentarios
+        WHERE DATE(created_at) = CURDATE()
+        GROUP BY user_id
+        ORDER BY num_comentarios DESC
+        LIMIT 1
+    ) AS max_comentarios ON usuarios.id = max_comentarios.user_id
+) AS subconsulta;
+
+LO PRIMERO QUE HACE EL CODIGO ES OBTENER LO DATOS Y DESPUES AGRUPA, ORDENA Y LIMITA.
+Y CON LOS RESULTADOS OBTENIDOS EN LA SUB CONSULTA PODEMOS HACER EL SELECT.
+
+----------------------------------------------------------------------------------------
+visualizar el username y correo electronico del usuario con 2 O MAS comentarios el dia de hoy
+
+SELECT username, email
+FROM (
+    SELECT usuarios.username, usuarios.email, max_comentarios.num_comentarios AS cantidad_comentarios
+    FROM usuarios
+    INNER JOIN (
+        SELECT user_id, COUNT(*) AS num_comentarios --AGRUPAMINETO NOS PERMITE CONTAS LOS DATOS
+        FROM comentarios
+        WHERE DATE(created_at) = CURDATE()
+        GROUP BY usuario.username
+	HAVING num_comentarios >= 2
+        ORDER BY num_comentarios DESC
+        LIMIT 1
+    ) AS max_comentarios ON usuarios.id = max_comentarios.user_id
+) AS subconsulta;
+______________________________________________________________________________________
+
+con este comando estamos mas cerca del resultado deseado
+
+SELECT username, email
+FROM (
+    SELECT usuarios.username, usuarios.email, MAX(num_comentarios) AS cantidad_comentarios
+    FROM usuarios
+    INNER JOIN (
+        SELECT user_id, COUNT(*) AS num_comentarios
+        FROM comentarios
+        WHERE DATE(created_at) = CURDATE()
+        GROUP BY user_id
+        HAVING num_comentarios <4
+        ORDER BY num_comentarios DESC
+    ) AS max_comentarios ON usuarios.id = max_comentarios.user_id
+) AS subconsulta;
+
+
+--------------------------------------------------------------------------------------------------
+con este comando podremos cambiar los datos de nuestra variable
+	SET @username = 'juanito123';
+	SELECT * FROM usuarios WHERE username = @username;
+
+
+__________________________________________________________________________________________
+
+generaremos un respaldo de la base de datos para mayor segurida
+
+mysqldump -h localhost -u tarea -p tarea > pratica.sql
+
+
+
